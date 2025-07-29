@@ -413,63 +413,48 @@
 
     <script>
         const { createApp } = Vue;
+        const { Calendar, DatePicker } = VCalendar;
 
         createApp({
+            components: {
+                'v-calendar': Calendar,
+                'v-date-picker': DatePicker
+            },
             data() {
                 return {
-                    currentDate: new Date(),
                     newVisit: {
                         customerName: '',
                         date: '',
                         time: '',
                         notes: ''
                     },
-                    visits: []
+                    visits: [],
+                    locale: {
+                        id: 'zh-TW',
+                        firstDayOfWeek: 1,
+                        masks: {
+                            weekdays: 'WWW',
+                            navMonths: 'MMMM',
+                            title: 'MMMM YYYY'
+                        }
+                    }
                 }
             },
             computed: {
-                currentMonthYear() {
-                    const months = [
-                        '一月', '二月', '三月', '四月', '五月', '六月',
-                        '七月', '八月', '九月', '十月', '十一月', '十二月'
-                    ];
-                    return `${this.currentDate.getFullYear()}年 ${months[this.currentDate.getMonth()]}`;
-                },
-                calendarDays() {
-                    const year = this.currentDate.getFullYear();
-                    const month = this.currentDate.getMonth();
-                    
-                    // 獲取當月第一天和最後一天
-                    const firstDay = new Date(year, month, 1);
-                    const lastDay = new Date(year, month + 1, 0);
-                    
-                    // 獲取日曆開始日期（包含上個月的日期）
-                    const startDate = new Date(firstDay);
-                    startDate.setDate(startDate.getDate() - firstDay.getDay());
-                    
-                    // 獲取日曆結束日期（包含下個月的日期）
-                    const endDate = new Date(lastDay);
-                    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
-                    
-                    const days = [];
-                    const currentDate = new Date(startDate);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    while (currentDate <= endDate) {
-                        const dayDate = new Date(currentDate);
-                        dayDate.setHours(0, 0, 0, 0);
-                        
-                        days.push({
-                            date: new Date(dayDate),
-                            isOtherMonth: dayDate.getMonth() !== month,
-                            isToday: dayDate.getTime() === today.getTime()
-                        });
-                        
-                        currentDate.setDate(currentDate.getDate() + 1);
-                    }
-                    
-                    return days;
+                calendarAttributes() {
+                    return this.visits.map(visit => ({
+                        key: visit.id,
+                        customData: visit,
+                        dates: new Date(visit.date),
+                        dot: {
+                            color: '#6c5ce7',
+                            class: 'visit-dot'
+                        },
+                        popover: {
+                            label: `${visit.customerName} - ${visit.time}`,
+                            visibility: 'hover'
+                        }
+                    }));
                 },
                 sortedVisits() {
                     return [...this.visits].sort((a, b) => {
@@ -480,11 +465,26 @@
                 }
             },
             methods: {
-                previousMonth() {
-                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
-                },
-                nextMonth() {
-                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+                onDayClick(day) {
+                    // 點擊日期時自動填入表單
+                    this.newVisit.date = day.id;
+                    
+                    // 滾動到表單區域
+                    const formSection = document.querySelector('.form-section');
+                    if (formSection) {
+                        formSection.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start' 
+                        });
+                    }
+                    
+                    // 聚焦到客戶名稱輸入框
+                    this.$nextTick(() => {
+                        const customerInput = document.querySelector('input[placeholder="請輸入客戶名稱"]');
+                        if (customerInput) {
+                            customerInput.focus();
+                        }
+                    });
                 },
                 addVisit() {
                     if (this.newVisit.customerName.trim() && this.newVisit.date && this.newVisit.time) {
@@ -507,26 +507,71 @@
                             notes: ''
                         };
                         
-                        alert('拜訪日程已成功新增！');
+                        // 使用更優雅的通知方式
+                        this.showNotification('拜訪日程已成功新增！', 'success');
                     } else {
-                        alert('請填寫客戶名稱、日期和時間！');
+                        this.showNotification('請填寫客戶名稱、日期和時間！', 'error');
                     }
                 },
                 deleteVisit(id) {
                     if (confirm('確定要刪除這個拜訪日程嗎？')) {
                         this.visits = this.visits.filter(visit => visit.id !== id);
                         this.saveToLocalStorage();
+                        this.showNotification('拜訪日程已刪除', 'info');
                     }
-                },
-                getVisitsForDay(date) {
-                    const dateString = date.toISOString().split('T')[0];
-                    return this.visits.filter(visit => visit.date === dateString);
                 },
                 formatDate(dateString) {
                     const date = new Date(dateString);
                     const month = date.getMonth() + 1;
                     const day = date.getDate();
                     return `${month}/${day}`;
+                },
+                formatDateForPopover(date) {
+                    const options = { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        weekday: 'long'
+                    };
+                    return date.toLocaleDateString('zh-TW', options);
+                },
+                showNotification(message, type = 'info') {
+                    // 創建通知元素
+                    const notification = document.createElement('div');
+                    notification.textContent = message;
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        padding: 12px 20px;
+                        border-radius: 6px;
+                        color: white;
+                        font-weight: 500;
+                        z-index: 10000;
+                        transition: all 0.3s ease;
+                        opacity: 0;
+                        transform: translateX(100%);
+                        ${type === 'success' ? 'background: linear-gradient(135deg, #00b894, #00cec9);' : ''}
+                        ${type === 'error' ? 'background: linear-gradient(135deg, #e55656, #ff6b6b);' : ''}
+                        ${type === 'info' ? 'background: linear-gradient(135deg, #574b90, #6c5ce7);' : ''}
+                    `;
+                    
+                    document.body.appendChild(notification);
+                    
+                    // 顯示動畫
+                    setTimeout(() => {
+                        notification.style.opacity = '1';
+                        notification.style.transform = 'translateX(0)';
+                    }, 100);
+                    
+                    // 隱藏動畫
+                    setTimeout(() => {
+                        notification.style.opacity = '0';
+                        notification.style.transform = 'translateX(100%)';
+                        setTimeout(() => {
+                            document.body.removeChild(notification);
+                        }, 300);
+                    }, 3000);
                 },
                 saveToLocalStorage() {
                     localStorage.setItem('customerVisits', JSON.stringify(this.visits));
