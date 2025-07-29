@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客戶拜訪日曆</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .calendar-section {
+            flex: 2;
+        }
+
+        .form-section {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .nav-btn {
+            background: #4facfe;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: #357abd;
+        }
+
+        .current-month {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .day-header {
+            background: #4facfe;
+            color: white;
+            padding: 15px 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .day {
+            background: white;
+            min-height: 120px;
+            padding: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            position: relative;
+        }
+
+        .day:hover {
+            background: #e3f2fd;
+        }
+
+        .day.other-month {
+            background: #f5f5f5;
+            color: #ccc;
+        }
+
+        .day.today {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+        }
+
+        .day-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .visit-item {
+            background: #4facfe;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            margin-bottom: 2px;
+            word-break: break-word;
+        }
+
+        .form-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .add-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .visits-list {
+            margin-top: 30px;
+        }
+
+        .visits-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .visit-list-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 4px solid #4facfe;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #ff3838;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .calendar {
+                grid-template-columns: repeat(7, 1fr);
+            }
+            
+            .day {
+                min-height: 80px;
+                padding: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1>客戶拜訪日曆</h1>
+                <p>管理您的客戶拜訪行程</p>
+            </div>
+            
+            <div class="main-content">
+                <div class="calendar-section">
+                    <div class="calendar-header">
+                        <button class="nav-btn" @click="previousMonth">‹ 上個月</button>
+                        <div class="current-month">{{ currentMonthYear }}</div>
+                        <button class="nav-btn" @click="nextMonth">下個月 ›</button>
+                    </div>
+                    
+                    <div class="calendar">
+                        <div class="day-header">日</div>
+                        <div class="day-header">一</div>
+                        <div class="day-header">二</div>
+                        <div class="day-header">三</div>
+                        <div class="day-header">四</div>
+                        <div class="day-header">五</div>
+                        <div class="day-header">六</div>
+                        
+                        <div 
+                            v-for="day in calendarDays" 
+                            :key="day.date.toISOString()" 
+                            :class="['day', {
+                                'other-month': day.isOtherMonth,
+                                'today': day.isToday
+                            }]"
+                        >
+                            <div class="day-number">{{ day.date.getDate() }}</div>
+                            <div 
+                                v-for="visit in getVisitsForDay(day.date)" 
+                                :key="visit.id" 
+                                class="visit-item"
+                            >
+                                {{ visit.customerName }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h2 class="form-title">新增拜訪日程</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">客戶名稱</label>
+                        <input 
+                            type="text" 
+                            v-model="newVisit.customerName" 
+                            class="form-input" 
+                            placeholder="請輸入客戶名稱"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">拜訪日期</label>
+                        <input 
+                            type="date" 
+                            v-model="newVisit.date" 
+                            class="form-input"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">拜訪時間</label>
+                        <input 
+                            type="time" 
+                            v-model="newVisit.time" 
+                            class="form-input"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">備註</label>
+                        <input 
+                            type="text" 
+                            v-model="newVisit.notes" 
+                            class="form-input" 
+                            placeholder="拜訪備註（選填）"
+                        >
+                    </div>
+                    
+                    <button @click="addVisit" class="add-btn">新增拜訪日程</button>
+                    
+                    <div class="visits-list" v-if="visits.length > 0">
+                        <h3 class="visits-title">近期拜訪</h3>
+                        <div 
+                            v-for="visit in sortedVisits" 
+                            :key="visit.id" 
+                            class="visit-list-item"
+                        >
+                            <div>
+                                <strong>{{ visit.customerName }}</strong><br>
+                                <small>{{ formatDate(visit.date) }} {{ visit.time }}</small>
+                                <div v-if="visit.notes" style="color: #666; font-size: 0.8rem;">
+                                    {{ visit.notes }}
+                                </div>
+                            </div>
+                            <button @click="deleteVisit(visit.id)" class="delete-btn">刪除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentDate: new Date(),
+                    newVisit: {
+                        customerName: '',
+                        date: '',
+                        time: '',
+                        notes: ''
+                    },
+                    visits: []
+                }
+            },
+            computed: {
+                currentMonthYear() {
+                    const months = [
+                        '一月', '二月', '三月', '四月', '五月', '六月',
+                        '七月', '八月', '九月', '十月', '十一月', '十二月'
+                    ];
+                    return `${this.currentDate.getFullYear()}年 ${months[this.currentDate.getMonth()]}`;
+                },
+                calendarDays() {
+                    const year = this.currentDate.getFullYear();
+                    const month = this.currentDate.getMonth();
+                    
+                    // 獲取當月第一天和最後一天
+                    const firstDay = new Date(year, month, 1);
+                    const lastDay = new Date(year, month + 1, 0);
+                    
+                    // 獲取日曆開始日期（包含上個月的日期）
+                    const startDate = new Date(firstDay);
+                    startDate.setDate(startDate.getDate() - firstDay.getDay());
+                    
+                    // 獲取日曆結束日期（包含下個月的日期）
+                    const endDate = new Date(lastDay);
+                    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+                    
+                    const days = [];
+                    const currentDate = new Date(startDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    while (currentDate <= endDate) {
+                        const dayDate = new Date(currentDate);
+                        dayDate.setHours(0, 0, 0, 0);
+                        
+                        days.push({
+                            date: new Date(dayDate),
+                            isOtherMonth: dayDate.getMonth() !== month,
+                            isToday: dayDate.getTime() === today.getTime()
+                        });
+                        
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                    
+                    return days;
+                },
+                sortedVisits() {
+                    return [...this.visits].sort((a, b) => {
+                        const dateA = new Date(a.date + ' ' + a.time);
+                        const dateB = new Date(b.date + ' ' + b.time);
+                        return dateA - dateB;
+                    });
+                }
+            },
+            methods: {
+                previousMonth() {
+                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
+                },
+                nextMonth() {
+                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+                },
+                addVisit() {
+                    if (this.newVisit.customerName.trim() && this.newVisit.date && this.newVisit.time) {
+                        const visit = {
+                            id: Date.now(),
+                            customerName: this.newVisit.customerName.trim(),
+                            date: this.newVisit.date,
+                            time: this.newVisit.time,
+                            notes: this.newVisit.notes.trim()
+                        };
+                        
+                        this.visits.push(visit);
+                        this.saveToLocalStorage();
+                        
+                        // 清空表單
+                        this.newVisit = {
+                            customerName: '',
+                            date: '',
+                            time: '',
+                            notes: ''
+                        };
+                        
+                        alert('拜訪日程已成功新增！');
+                    } else {
+                        alert('請填寫客戶名稱、日期和時間！');
+                    }
+                },
+                deleteVisit(id) {
+                    if (confirm('確定要刪除這個拜訪日程嗎？')) {
+                        this.visits = this.visits.filter(visit => visit.id !== id);
+                        this.saveToLocalStorage();
+                    }
+                },
+                getVisitsForDay(date) {
+                    const dateString = date.toISOString().split('T')[0];
+                    return this.visits.filter(visit => visit.date === dateString);
+                },
+                formatDate(dateString) {
+                    const date = new Date(dateString);
+                    const month = date.getMonth() + 1;
+                    const day = date.getDate();
+                    return `${month}/${day}`;
+                },
+                saveToLocalStorage() {
+                    localStorage.setItem('customerVisits', JSON.stringify(this.visits));
+                },
+                loadFromLocalStorage() {
+                    const saved = localStorage.getItem('customerVisits');
+                    if (saved) {
+                        this.visits = JSON.parse(saved);
+                    }
+                }
+            },
+            mounted() {
+                this.loadFromLocalStorage();
+                
+                // 設置今天的日期為預設值
+                const today = new Date();
+                this.newVisit.date = today.toISOString().split('T')[0];
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
