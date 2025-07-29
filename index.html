@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客戶拜訪日曆</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://unpkg.com/v-calendar@3/dist/index.umd.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/v-calendar@3/dist/style.css">
     <style>
         * {
             margin: 0;
@@ -99,92 +97,140 @@
             border-radius: 10px;
             padding: 20px;
             border: 1px solid #40407a;
+            position: relative;
         }
 
-        /* v-calendar 深色主題自定義樣式 */
-        .vc-container {
-            background: transparent !important;
-            border: none !important;
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #1a1a2e;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #40407a;
         }
 
-        .vc-header {
-            background: transparent !important;
-            color: #e8e8e8 !important;
+        .day-header {
+            background: #40407a;
+            color: #e8e8e8;
+            padding: 15px 5px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #574b90;
         }
 
-        .vc-title {
-            color: #e8e8e8 !important;
-            font-size: 1.3rem !important;
-            font-weight: bold !important;
+        .day {
+            background: #2c2c54;
+            min-height: 100px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            color: #e8e8e8;
+            border: 1px solid #353570;
+            display: flex;
+            flex-direction: column;
         }
 
-        .vc-arrow {
-            color: #e8e8e8 !important;
-            background: #40407a !important;
-            border-radius: 50% !important;
-            width: 30px !important;
-            height: 30px !important;
-            transition: all 0.3s !important;
+        .day:hover {
+            background: #353570;
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
-        .vc-arrow:hover {
-            background: #574b90 !important;
-            transform: scale(1.1) !important;
+        .day.other-month {
+            background: #1e1e3f;
+            color: #7a7a9d;
         }
 
-        .vc-weekday {
-            color: #b8b8d1 !important;
-            background: #40407a !important;
-            font-weight: bold !important;
-            padding: 10px 0 !important;
+        .day.today {
+            background: #40407a;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
         }
 
-        .vc-day {
-            background: #2c2c54 !important;
-            border: 1px solid #353570 !important;
-            transition: all 0.3s !important;
+        .day.has-visits {
+            border-left: 3px solid #6c5ce7;
         }
 
-        .vc-day:hover {
-            background: #353570 !important;
-            transform: scale(1.02) !important;
+        .day-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
         }
 
-        .vc-day-content {
-            color: #e8e8e8 !important;
-            font-weight: 500 !important;
-        }
-
-        .vc-day.is-today .vc-day-content {
-            background: #ffd700 !important;
-            color: #1a1a2e !important;
-            font-weight: bold !important;
-            border-radius: 50% !important;
-        }
-
-        .vc-day.is-not-in-month .vc-day-content {
-            color: #7a7a9d !important;
-        }
-
-        .vc-day-dots {
-            margin-top: 4px !important;
+        .visit-dots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            margin-top: auto;
         }
 
         .visit-dot {
-            width: 6px !important;
-            height: 6px !important;
-            background: #6c5ce7 !important;
-            border-radius: 50% !important;
-            margin: 1px !important;
+            width: 6px;
+            height: 6px;
+            background: #6c5ce7;
+            border-radius: 50%;
+            transition: all 0.2s;
         }
 
-        .visit-popover {
-            background: #2c2c54 !important;
-            border: 1px solid #40407a !important;
-            border-radius: 8px !important;
-            color: #e8e8e8 !important;
-            padding: 10px !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+        .visit-dot:hover {
+            transform: scale(1.2);
+            background: #a29bfe;
+        }
+
+        .visit-more {
+            font-size: 0.6rem;
+            background: #574b90;
+            color: white;
+            padding: 1px 3px;
+            border-radius: 2px;
+            line-height: 1;
+        }
+
+        .tooltip {
+            position: fixed;
+            background: #2c2c54;
+            border: 1px solid #40407a;
+            border-radius: 8px;
+            padding: 12px;
+            color: #e8e8e8;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            min-width: 200px;
+            max-width: 300px;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tooltip-header {
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #40407a;
+            padding-bottom: 4px;
+        }
+
+        .tooltip-visit {
+            margin-bottom: 6px;
+            padding: 4px 8px;
+            background: linear-gradient(135deg, #574b90 0%, #6c5ce7 100%);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tooltip-empty {
+            color: #b8b8d1;
+            font-style: italic;
+            text-align: center;
+            padding: 8px;
         }
 
         .visit-item {
@@ -318,31 +364,75 @@
             
             <div class="main-content">
                 <div class="calendar-section">
+                    <div class="calendar-header">
+                        <button class="nav-btn" @click="previousMonth">‹ 上個月</button>
+                        <div class="current-month">{{ currentMonthYear }}</div>
+                        <button class="nav-btn" @click="nextMonth">下個月 ›</button>
+                    </div>
+                    
                     <div class="calendar-container">
-                        <v-calendar
-                            ref="calendar"
-                            :attributes="calendarAttributes"
-                            :locale="locale"
-                            @dayclick="onDayClick"
-                            expanded
-                        >
-                            <template #day-popover="{ day, attributes }">
-                                <div class="visit-popover">
-                                    <div style="font-weight: bold; margin-bottom: 8px; color: #ffd700;">
-                                        {{ formatDateForPopover(day.date) }}
-                                    </div>
-                                    <div v-for="attr in attributes" :key="attr.key">
-                                        <div v-if="attr.customData" class="visit-item">
-                                            <div style="font-weight: bold;">{{ attr.customData.customerName }}</div>
-                                            <div style="font-size: 0.7rem; opacity: 0.8;">
-                                                {{ attr.customData.time }}
-                                                <span v-if="attr.customData.notes"> - {{ attr.customData.notes }}</span>
-                                            </div>
-                                        </div>
+                        <div class="calendar">
+                            <div class="day-header">日</div>
+                            <div class="day-header">一</div>
+                            <div class="day-header">二</div>
+                            <div class="day-header">三</div>
+                            <div class="day-header">四</div>
+                            <div class="day-header">五</div>
+                            <div class="day-header">六</div>
+                            
+                            <div 
+                                v-for="day in calendarDays" 
+                                :key="day.date.toISOString()" 
+                                :class="['day', {
+                                    'other-month': day.isOtherMonth,
+                                    'today': day.isToday,
+                                    'has-visits': getVisitsForDay(day.date).length > 0
+                                }]"
+                                @click="onDayClick(day.date)"
+                                @mouseenter="showTooltip($event, day.date)"
+                                @mouseleave="hideTooltip"
+                            >
+                                <div class="day-number">{{ day.date.getDate() }}</div>
+                                <div class="visit-dots">
+                                    <div 
+                                        v-for="visit in getVisitsForDay(day.date).slice(0, 3)" 
+                                        :key="visit.id" 
+                                        class="visit-dot"
+                                        :title="visit.customerName"
+                                    ></div>
+                                    <div 
+                                        v-if="getVisitsForDay(day.date).length > 3"
+                                        class="visit-more"
+                                    >
+                                        +{{ getVisitsForDay(day.date).length - 3 }}
                                     </div>
                                 </div>
-                            </template>
-                        </v-calendar>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 懸停提示框 -->
+                    <div 
+                        v-if="tooltip.show" 
+                        class="tooltip"
+                        :style="{
+                            left: tooltip.x + 'px',
+                            top: tooltip.y + 'px'
+                        }"
+                    >
+                        <div class="tooltip-header">
+                            {{ formatDateForTooltip(tooltip.date) }}
+                        </div>
+                        <div v-for="visit in getVisitsForDay(tooltip.date)" :key="visit.id" class="tooltip-visit">
+                            <div style="font-weight: bold;">{{ visit.customerName }}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.8;">
+                                {{ visit.time }}
+                                <span v-if="visit.notes"> - {{ visit.notes }}</span>
+                            </div>
+                        </div>
+                        <div v-if="getVisitsForDay(tooltip.date).length === 0" class="tooltip-empty">
+                            點擊新增拜訪日程
+                        </div>
                     </div>
                 </div>
                 
@@ -413,15 +503,11 @@
 
     <script>
         const { createApp } = Vue;
-        const { Calendar, DatePicker } = VCalendar;
 
         createApp({
-            components: {
-                'v-calendar': Calendar,
-                'v-date-picker': DatePicker
-            },
             data() {
                 return {
+                    currentDate: new Date(),
                     newVisit: {
                         customerName: '',
                         date: '',
@@ -429,32 +515,57 @@
                         notes: ''
                     },
                     visits: [],
-                    locale: {
-                        id: 'zh-TW',
-                        firstDayOfWeek: 1,
-                        masks: {
-                            weekdays: 'WWW',
-                            navMonths: 'MMMM',
-                            title: 'MMMM YYYY'
-                        }
+                    tooltip: {
+                        show: false,
+                        x: 0,
+                        y: 0,
+                        date: null
                     }
                 }
             },
             computed: {
-                calendarAttributes() {
-                    return this.visits.map(visit => ({
-                        key: visit.id,
-                        customData: visit,
-                        dates: new Date(visit.date),
-                        dot: {
-                            color: '#6c5ce7',
-                            class: 'visit-dot'
-                        },
-                        popover: {
-                            label: `${visit.customerName} - ${visit.time}`,
-                            visibility: 'hover'
-                        }
-                    }));
+                currentMonthYear() {
+                    const months = [
+                        '一月', '二月', '三月', '四月', '五月', '六月',
+                        '七月', '八月', '九月', '十月', '十一月', '十二月'
+                    ];
+                    return `${this.currentDate.getFullYear()}年 ${months[this.currentDate.getMonth()]}`;
+                },
+                calendarDays() {
+                    const year = this.currentDate.getFullYear();
+                    const month = this.currentDate.getMonth();
+                    
+                    // 獲取當月第一天和最後一天
+                    const firstDay = new Date(year, month, 1);
+                    const lastDay = new Date(year, month + 1, 0);
+                    
+                    // 獲取日曆開始日期（包含上個月的日期）
+                    const startDate = new Date(firstDay);
+                    startDate.setDate(startDate.getDate() - firstDay.getDay());
+                    
+                    // 獲取日曆結束日期（包含下個月的日期）
+                    const endDate = new Date(lastDay);
+                    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
+                    
+                    const days = [];
+                    const currentDate = new Date(startDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    while (currentDate <= endDate) {
+                        const dayDate = new Date(currentDate);
+                        dayDate.setHours(0, 0, 0, 0);
+                        
+                        days.push({
+                            date: new Date(dayDate),
+                            isOtherMonth: dayDate.getMonth() !== month,
+                            isToday: dayDate.getTime() === today.getTime()
+                        });
+                        
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                    
+                    return days;
                 },
                 sortedVisits() {
                     return [...this.visits].sort((a, b) => {
@@ -465,9 +576,18 @@
                 }
             },
             methods: {
-                onDayClick(day) {
+                previousMonth() {
+                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() - 1, 1);
+                },
+                nextMonth() {
+                    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 1);
+                },
+                onDayClick(date) {
                     // 點擊日期時自動填入表單
-                    this.newVisit.date = day.id;
+                    this.newVisit.date = date.toISOString().split('T')[0];
+                    
+                    // 隱藏提示框
+                    this.hideTooltip();
                     
                     // 滾動到表單區域
                     const formSection = document.querySelector('.form-section');
@@ -485,6 +605,49 @@
                             customerInput.focus();
                         }
                     });
+                },
+                showTooltip(event, date) {
+                    const rect = event.target.getBoundingClientRect();
+                    this.tooltip = {
+                        show: true,
+                        x: rect.left + rect.width / 2,
+                        y: rect.top - 10,
+                        date: date
+                    };
+                    
+                    // 使用 requestAnimationFrame 確保 DOM 更新後再顯示
+                    this.$nextTick(() => {
+                        const tooltipEl = document.querySelector('.tooltip');
+                        if (tooltipEl) {
+                            tooltipEl.classList.add('show');
+                            
+                            // 調整位置避免超出螢幕
+                            const tooltipRect = tooltipEl.getBoundingClientRect();
+                            if (tooltipRect.right > window.innerWidth) {
+                                this.tooltip.x = window.innerWidth - tooltipRect.width - 10;
+                            }
+                            if (tooltipRect.left < 0) {
+                                this.tooltip.x = 10;
+                            }
+                            if (tooltipRect.top < 0) {
+                                this.tooltip.y = rect.bottom + 10;
+                            }
+                        }
+                    });
+                },
+                hideTooltip() {
+                    const tooltipEl = document.querySelector('.tooltip');
+                    if (tooltipEl) {
+                        tooltipEl.classList.remove('show');
+                    }
+                    
+                    setTimeout(() => {
+                        this.tooltip.show = false;
+                    }, 300);
+                },
+                getVisitsForDay(date) {
+                    const dateString = date.toISOString().split('T')[0];
+                    return this.visits.filter(visit => visit.date === dateString);
                 },
                 addVisit() {
                     if (this.newVisit.customerName.trim() && this.newVisit.date && this.newVisit.time) {
@@ -526,7 +689,7 @@
                     const day = date.getDate();
                     return `${month}/${day}`;
                 },
-                formatDateForPopover(date) {
+                formatDateForTooltip(date) {
                     const options = { 
                         year: 'numeric', 
                         month: 'long', 
