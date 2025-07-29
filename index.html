@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客戶拜訪日曆</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/v-calendar@3/dist/index.umd.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/v-calendar@3/dist/style.css">
     <style>
         * {
             margin: 0;
@@ -92,66 +94,106 @@
             color: #e8e8e8;
         }
 
-        .calendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            background: #1a1a2e;
-            border-radius: 8px;
-            overflow: hidden;
+        .calendar-container {
+            background: #2c2c54;
+            border-radius: 10px;
+            padding: 20px;
             border: 1px solid #40407a;
         }
 
-        .day-header {
-            background: #40407a;
-            color: #e8e8e8;
-            padding: 15px 5px;
-            text-align: center;
-            font-weight: bold;
-            border-bottom: 1px solid #574b90;
+        /* v-calendar 深色主題自定義樣式 */
+        .vc-container {
+            background: transparent !important;
+            border: none !important;
         }
 
-        .day {
-            background: #2c2c54;
-            min-height: 120px;
-            padding: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            color: #e8e8e8;
-            border: 1px solid #353570;
+        .vc-header {
+            background: transparent !important;
+            color: #e8e8e8 !important;
         }
 
-        .day:hover {
-            background: #353570;
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        .vc-title {
+            color: #e8e8e8 !important;
+            font-size: 1.3rem !important;
+            font-weight: bold !important;
         }
 
-        .day.other-month {
-            background: #1e1e3f;
-            color: #7a7a9d;
+        .vc-arrow {
+            color: #e8e8e8 !important;
+            background: #40407a !important;
+            border-radius: 50% !important;
+            width: 30px !important;
+            height: 30px !important;
+            transition: all 0.3s !important;
         }
 
-        .day.today {
-            background: #40407a;
-            border: 2px solid #ffd700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        .vc-arrow:hover {
+            background: #574b90 !important;
+            transform: scale(1.1) !important;
         }
 
-        .day-number {
-            font-weight: bold;
-            margin-bottom: 5px;
+        .vc-weekday {
+            color: #b8b8d1 !important;
+            background: #40407a !important;
+            font-weight: bold !important;
+            padding: 10px 0 !important;
+        }
+
+        .vc-day {
+            background: #2c2c54 !important;
+            border: 1px solid #353570 !important;
+            transition: all 0.3s !important;
+        }
+
+        .vc-day:hover {
+            background: #353570 !important;
+            transform: scale(1.02) !important;
+        }
+
+        .vc-day-content {
+            color: #e8e8e8 !important;
+            font-weight: 500 !important;
+        }
+
+        .vc-day.is-today .vc-day-content {
+            background: #ffd700 !important;
+            color: #1a1a2e !important;
+            font-weight: bold !important;
+            border-radius: 50% !important;
+        }
+
+        .vc-day.is-not-in-month .vc-day-content {
+            color: #7a7a9d !important;
+        }
+
+        .vc-day-dots {
+            margin-top: 4px !important;
+        }
+
+        .visit-dot {
+            width: 6px !important;
+            height: 6px !important;
+            background: #6c5ce7 !important;
+            border-radius: 50% !important;
+            margin: 1px !important;
+        }
+
+        .visit-popover {
+            background: #2c2c54 !important;
+            border: 1px solid #40407a !important;
+            border-radius: 8px !important;
+            color: #e8e8e8 !important;
+            padding: 10px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
         }
 
         .visit-item {
             background: linear-gradient(135deg, #574b90 0%, #6c5ce7 100%);
             color: #e8e8e8;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 0.7rem;
-            margin-bottom: 2px;
-            word-break: break-word;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -276,38 +318,31 @@
             
             <div class="main-content">
                 <div class="calendar-section">
-                    <div class="calendar-header">
-                        <button class="nav-btn" @click="previousMonth">‹ 上個月</button>
-                        <div class="current-month">{{ currentMonthYear }}</div>
-                        <button class="nav-btn" @click="nextMonth">下個月 ›</button>
-                    </div>
-                    
-                    <div class="calendar">
-                        <div class="day-header">日</div>
-                        <div class="day-header">一</div>
-                        <div class="day-header">二</div>
-                        <div class="day-header">三</div>
-                        <div class="day-header">四</div>
-                        <div class="day-header">五</div>
-                        <div class="day-header">六</div>
-                        
-                        <div 
-                            v-for="day in calendarDays" 
-                            :key="day.date.toISOString()" 
-                            :class="['day', {
-                                'other-month': day.isOtherMonth,
-                                'today': day.isToday
-                            }]"
+                    <div class="calendar-container">
+                        <v-calendar
+                            ref="calendar"
+                            :attributes="calendarAttributes"
+                            :locale="locale"
+                            @dayclick="onDayClick"
+                            expanded
                         >
-                            <div class="day-number">{{ day.date.getDate() }}</div>
-                            <div 
-                                v-for="visit in getVisitsForDay(day.date)" 
-                                :key="visit.id" 
-                                class="visit-item"
-                            >
-                                {{ visit.customerName }}
-                            </div>
-                        </div>
+                            <template #day-popover="{ day, attributes }">
+                                <div class="visit-popover">
+                                    <div style="font-weight: bold; margin-bottom: 8px; color: #ffd700;">
+                                        {{ formatDateForPopover(day.date) }}
+                                    </div>
+                                    <div v-for="attr in attributes" :key="attr.key">
+                                        <div v-if="attr.customData" class="visit-item">
+                                            <div style="font-weight: bold;">{{ attr.customData.customerName }}</div>
+                                            <div style="font-size: 0.7rem; opacity: 0.8;">
+                                                {{ attr.customData.time }}
+                                                <span v-if="attr.customData.notes"> - {{ attr.customData.notes }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </v-calendar>
                     </div>
                 </div>
                 
